@@ -10,7 +10,7 @@ module kana_aggregator::aggregator {
     use aptos_std::type_info::{TypeInfo, type_of};
     use pontem::router;
     // use liquidswap::curves::Uncorrelated;
-    use test_coins::coins::{USDT, BTC};
+    // use test_coins::coins::{USDT, BTC};
 
   const HI_64: u64 = 0xffffffffffffffff;
 
