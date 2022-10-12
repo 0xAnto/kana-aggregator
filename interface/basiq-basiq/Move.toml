@@ -1,0 +1,10 @@
+[package]
+name = "basiq"
+version = "0.0.0"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "afa8e736ab33aadf1053354fafa9c1a7fdd18e6b" }
+
+[addresses]
+basiq = "4885b08864b81ca42b19c38fff2eb958b5e312b1ec366014d4afff2775c19aab"
+
