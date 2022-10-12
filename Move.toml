@@ -1,15 +1,19 @@
 [package]
 name = 'kana-aggregator'
 version = '1.0.0'
-[dependencies]
-basiq = { local = "./interface/basiq-basiq" }
-Liquidswap = { local = "./interface/pontem-Liquidswap" }
-LiquidswapLP = { local = "./interface/pontem-LiquidswapLP" }
-CoinList = { git = "https://github.com/hippospace/aptos-coin-list.git", subdir = "", rev = "71cc8c83b85c54702adce6c32d4063f2acced00f" }
+
 [dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
-subdir = 'aptos-move/framework/aptos-framework'
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "985f19d40457a5f09f2d741b1feca6bf7ba1f8a6"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies.Liquidswap]
+git = 'https://github.com/pontem-network/liquidswap.git'
+rev = 'c360ff1c3328581a0c78ed3f74a1c53acd9bfbd3'
+
+[dependencies.TestCoins]
+git = 'https://github.com/pontem-network/test-coins.git'
+rev = '1f05dc0b31615ebc5c1d5af87a5cc5aa180e0de3'
+
 [addresses]
 kana_aggregator = "0x82b94c0423cf25f6a58589f992390ec917eec0945198d9031c10cd79cedb6699"
-user="0x2"
