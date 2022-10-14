@@ -1,4 +1,4 @@
-module kana_aggregator::aggregator {
+module kana_aggregator::aggregate {
     use aptos_framework::coin;
     use aptos_framework::account;
     use std::signer;
@@ -9,8 +9,6 @@ module kana_aggregator::aggregator {
     use aptos_std::event;
     use aptos_std::type_info::{TypeInfo,type_of};
     use liquidswap::router;
-    // use liquidswap::curves::Uncorrelated;
-    // use test_coins::coins::{USDT, BTC};
 
   const HI_64: u64 = 0xffffffffffffffff;
 
@@ -48,7 +46,7 @@ module kana_aggregator::aggregator {
         init_module(admin);
     }
 
-fun emit_swap_step_event<Input, Output>(
+    fun emit_swap_step_event<Input, Output>(
         dex_type:u8,
         pool_type:u64,
         input_amount:u64,
@@ -119,7 +117,7 @@ fun emit_swap_step_event<Input, Output>(
         };
         coin::deposit(sender_addr, coin);
     }
-      public fun one_step_direct<X, Y, E>(
+      public fun direct_impl<X, Y, E>(
         dex_type: u8,
         pool_type: u64,
         // is_x_to_y: bool,
@@ -130,7 +128,7 @@ fun emit_swap_step_event<Input, Output>(
     }
 
     
- public entry fun one_step_route<X, Y, E>(
+ public entry fun direct_route<X, Y, E>(
         sender: &signer,
         first_dex_type: u8,
         first_pool_type: u64,
@@ -139,9 +137,7 @@ fun emit_swap_step_event<Input, Output>(
         y_min_out: u64,
     ) acquires EventStore {
         let coin_in = coin::withdraw<X>(sender, x_in);
-        // let btc_coins_to_swap_val = router::get_amount_in<BTC, USDT, Uncorrelated>(y_min_out);
-// let coin_in = coin::withdraw<BTC>(sender, btc_coins_to_swap_val);
-        let (coin_remain_opt, coin_out) = one_step_direct<X, Y, E>(first_dex_type, first_pool_type, coin_in,y_min_out);
+        let (coin_remain_opt, coin_out) = direct_impl<X, Y, E>(first_dex_type, first_pool_type, coin_in,y_min_out);
         assert!(coin::value(&coin_out) >= y_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
         check_and_deposit_opt(sender, coin_remain_opt);
         check_and_deposit(sender, coin_out);
