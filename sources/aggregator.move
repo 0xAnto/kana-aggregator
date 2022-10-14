@@ -1,4 +1,4 @@
-module kana_aggregator::aggregate {
+module kana_aggregator::aggregator {
     use aptos_framework::coin;
     use aptos_framework::account;
     use std::signer;
@@ -16,17 +16,15 @@ module kana_aggregator::aggregate {
     const E_OUTPUT_LESS_THAN_MINIMUM: u64 = 2;
     const E_UNKNOWN_DEX: u64 = 3;
     const E_NOT_ADMIN: u64 = 4;
-       const DEX_PONTEM: u8 = 1;
- struct EventStore has key {
+    const DEX_PONTEM: u8 = 1;
+    struct EventStore has key {
         swap_step_events: EventHandle<SwapStepEvent>,
     }
 
     struct SwapStepEvent has drop, store {
         dex_type: u8,
         pool_type: u64,
-        // input coin type
         x_type_info: TypeInfo,
-        // output coin type
         y_type_info: TypeInfo,
         input_amount: u64,
         output_amount: u64,
@@ -70,15 +68,14 @@ module kana_aggregator::aggregate {
       public fun get_intermediate_output<X, Y, E>(
         dex_type: u8,
         pool_type: u64,
-        // is_x_to_y: bool,
+        _is_x_to_y: bool,
         x_in: coin::Coin<X>,
-        y_min_out: u64
     ): (Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
         let coin_in_value = coin::value(&x_in);
         let (x_out_opt, y_out) =
          if (dex_type == DEX_PONTEM) {
 
-            (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(x_in, y_min_out))
+            (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(x_in, 0))
         }
         else {
             abort E_UNKNOWN_DEX
@@ -120,11 +117,10 @@ module kana_aggregator::aggregate {
       public fun direct_impl<X, Y, E>(
         dex_type: u8,
         pool_type: u64,
-        // is_x_to_y: bool,
+        is_x_to_y: bool,
         x_in: coin::Coin<X>,
-        y_min_out: u64
     ):(Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
-        get_intermediate_output<X, Y, E>(dex_type, pool_type,  x_in,y_min_out)
+        get_intermediate_output<X, Y, E>(dex_type, pool_type, is_x_to_y, x_in)
     }
 
     
@@ -132,15 +128,63 @@ module kana_aggregator::aggregate {
         sender: &signer,
         first_dex_type: u8,
         first_pool_type: u64,
-        // first_is_x_to_y: bool, // first trade uses normal order
+        first_is_x_to_y: bool, // first trade uses normal order
         x_in: u64,
         y_min_out: u64,
     ) acquires EventStore {
         let coin_in = coin::withdraw<X>(sender, x_in);
-        let (coin_remain_opt, coin_out) = direct_impl<X, Y, E>(first_dex_type, first_pool_type, coin_in,y_min_out);
+        let (coin_remain_opt, coin_out) = direct_impl<X, Y, E>(first_dex_type, first_pool_type, first_is_x_to_y, coin_in);
         assert!(coin::value(&coin_out) >= y_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
         check_and_deposit_opt(sender, coin_remain_opt);
         check_and_deposit(sender, coin_out);
+    }
+    public fun intermediate_route_impl<
+            X, Y, Z, E1, E2,
+        >(
+        first_dex_type: u8,
+        first_pool_type: u64,
+        first_is_x_to_y: bool, // first trade uses normal order
+        second_dex_type: u8,
+        second_pool_type: u64,
+        second_is_x_to_y: bool, // second trade uses normal order
+        x_in: coin::Coin<X>
+        ):(Option<coin::Coin<X>>, Option<coin::Coin<Y>>, coin::Coin<Z>) acquires EventStore {
+            let (coin_x_remain, coin_y) = get_intermediate_output<X, Y, E1>(first_dex_type, first_pool_type, first_is_x_to_y, x_in);
+            let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
+            (coin_x_remain, coin_y_remain, coin_z)
+    }
+        #[cmd]
+    public entry fun intermediate_route<
+        X, Y, Z, E1, E2,
+    >(
+        sender: &signer,
+        first_dex_type: u8,
+        first_pool_type: u64,
+        first_is_x_to_y: bool, // first trade uses normal order
+        second_dex_type: u8,
+        second_pool_type: u64,
+        second_is_x_to_y: bool, // second trade uses normal order
+        x_in: u64,
+        z_min_out: u64,
+    ) acquires EventStore {
+        let coin_x = coin::withdraw<X>(sender, x_in);
+        let (
+            coin_x_remain,
+            coin_y_remain,
+            coin_z
+        ) = intermediate_route_impl<X, Y, Z, E1, E2>(
+            first_dex_type,
+            first_pool_type,
+            first_is_x_to_y,
+            second_dex_type,
+            second_pool_type,
+            second_is_x_to_y,
+            coin_x
+        );
+        assert!(coin::value(&coin_z) >= z_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
+        check_and_deposit_opt(sender, coin_x_remain);
+        check_and_deposit_opt(sender, coin_y_remain);
+        check_and_deposit(sender, coin_z);
     }
 
 

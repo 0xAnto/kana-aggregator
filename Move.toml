@@ -12,4 +12,4 @@ git = 'https://github.com/pontem-network/liquidswap.git'
 rev = 'e5d11a7830f452133281e36ddd79396ae7590d39'
 
 [addresses]
-kana_aggregator = "0x82f3888ab2a8e76e67cf24a2ecffe3205f463f3a92b0d36d3910f3f5ece51121"
+kana_aggregator = "0x2fd573969cf2d5f0bf8bc9ec245dec6d031f6e00e50f32785913135c318a2dcd"
