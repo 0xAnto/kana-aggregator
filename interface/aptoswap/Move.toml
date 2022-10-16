@@ -1,0 +1,9 @@
+[package]
+name = "Aptoswap"
+version = "0.0.0"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "5b0ae7fbea9623e4042c2ef288801a6e44d3d75c" }
+
+[addresses]
+Aptoswap = "6b6f23b7ecaa50a02c699be6cc1d3e60a545090ba24e6b145ad71639e38bf4ba"

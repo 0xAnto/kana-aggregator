@@ -11,5 +11,8 @@ subdir = "aptos-move/framework/aptos-framework"
 git = 'https://github.com/pontem-network/liquidswap.git'
 rev = 'e5d11a7830f452133281e36ddd79396ae7590d39'
 
+[dependencies]
+Aptoswap = { local = "./interface/aptoswap" }
+
 [addresses]
 kana_aggregator = "0x2fd573969cf2d5f0bf8bc9ec245dec6d031f6e00e50f32785913135c318a2dcd"

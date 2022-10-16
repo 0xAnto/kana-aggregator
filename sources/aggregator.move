@@ -17,6 +17,7 @@ module kana_aggregator::aggregator {
     const E_UNKNOWN_DEX: u64 = 3;
     const E_NOT_ADMIN: u64 = 4;
     const DEX_PONTEM: u8 = 1;
+    const DEX_APTOSWAP: u8 = 2;
     struct EventStore has key {
         swap_step_events: EventHandle<SwapStepEvent>,
     }
@@ -68,14 +69,24 @@ module kana_aggregator::aggregator {
       public fun get_intermediate_output<X, Y, E>(
         dex_type: u8,
         pool_type: u64,
-        _is_x_to_y: bool,
+        is_x_to_y: bool,
         x_in: coin::Coin<X>,
     ): (Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
         let coin_in_value = coin::value(&x_in);
         let (x_out_opt, y_out) =
          if (dex_type == DEX_PONTEM) {
-
             (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(x_in, 0))
+        }   
+        else if (dex_type == DEX_APTOSWAP) {
+            use Aptoswap::pool;
+            if (is_x_to_y) {
+                let y_out = pool::swap_x_to_y_direct<X, Y>(x_in);
+                (option::none(), y_out)
+            }
+            else {
+                let y_out = pool::swap_y_to_x_direct<Y, X>(x_in);
+                (option::none(), y_out)
+            }
         }
         else {
             abort E_UNKNOWN_DEX
