@@ -1,4 +1,4 @@
-module kana_aggregator::aggregator {
+module kana_aggregator::aggregatorv1 {
     use aptos_framework::coin;
     use aptos_framework::account;
     use std::signer;
@@ -18,6 +18,7 @@ module kana_aggregator::aggregator {
     const E_NOT_ADMIN: u64 = 4;
     const DEX_PONTEM: u8 = 1;
     const DEX_APTOSWAP: u8 = 2;
+    const DEX_BASIQ: u8 = 3;
     struct EventStore has key {
         swap_step_events: EventHandle<SwapStepEvent>,
     }
@@ -87,7 +88,11 @@ module kana_aggregator::aggregator {
                 let y_out = pool::swap_y_to_x_direct<Y, X>(x_in);
                 (option::none(), y_out)
             }
-        }
+        }  
+        else if (dex_type == DEX_BASIQ) {
+            use basiq::dex;
+            (option::none(), dex::swap<X, Y>(x_in))
+        }   
         else {
             abort E_UNKNOWN_DEX
         };
