@@ -1,5 +1,5 @@
-module kana_aggregator::aggregatorv1 {
-    use aptos_framework::coin;
+module kana_aggregator::aggregatorP1 {
+    use aptos_framework::coin::{Self};
     use aptos_framework::account;
     use std::signer;
     use std::option;
@@ -11,14 +11,20 @@ module kana_aggregator::aggregatorv1 {
     use liquidswap::router;
 
   const HI_64: u64 = 0xffffffffffffffff;
+  const MAX_FEE: u64 = 50;
 
     const E_UNKNOWN_POOL_TYPE: u64 = 1;
     const E_OUTPUT_LESS_THAN_MINIMUM: u64 = 2;
     const E_UNKNOWN_DEX: u64 = 3;
     const E_NOT_ADMIN: u64 = 4;
+    const E_MORETHAN_MAX_FEE: u64 = 5;
+    const E_ADDR_CONFLICT: u64 = 6;
     const DEX_PONTEM: u8 = 1;
     const DEX_APTOSWAP: u8 = 2;
     const DEX_BASIQ: u8 = 3;
+
+    struct FeeProfile has key { receiver: address, fee:u64}
+    struct Platform has key { receiver: address, fee:u64}
     struct EventStore has key {
         swap_step_events: EventHandle<SwapStepEvent>,
     }
@@ -125,9 +131,18 @@ module kana_aggregator::aggregatorv1 {
 
     fun check_and_deposit<X>(sender: &signer, coin: coin::Coin<X>) {
         let sender_addr = signer::address_of(sender);
+
+        let amount = coin::value(&coin);
+        // let platform = borrow_global<Platform>(@kana_aggregator);
+        // let platform_fee = cal_fee(1000, 1);
+        // let platform_fee = 10;
+        // let platform_fee_coin = coin::extract(&mut coin, platform_fee);
+        // coin::deposit(platform.receiver, platform_fee_coin);
+
         if (!coin::is_account_registered<X>(sender_addr)) {
             coin::register<X>(sender);
         };
+
         coin::deposit(sender_addr, coin);
     }
       public fun direct_impl<X, Y, E>(
@@ -169,7 +184,8 @@ module kana_aggregator::aggregatorv1 {
             let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
             (coin_x_remain, coin_y_remain, coin_z)
     }
-        #[cmd]
+
+    
     public entry fun intermediate_route<
         X, Y, Z, E1, E2,
     >(
@@ -182,7 +198,11 @@ module kana_aggregator::aggregatorv1 {
         second_is_x_to_y: bool, // second trade uses normal order
         x_in: u64,
         z_min_out: u64,
+        _is_referred: bool,
+        _ref_addr:address
     ) acquires EventStore {
+
+
         let coin_x = coin::withdraw<X>(sender, x_in);
         let (
             coin_x_remain,
@@ -201,6 +221,42 @@ module kana_aggregator::aggregatorv1 {
         check_and_deposit_opt(sender, coin_x_remain);
         check_and_deposit_opt(sender, coin_y_remain);
         check_and_deposit(sender, coin_z);
+    }
+
+    public entry fun set_fee(account: &signer, fee : u64) acquires FeeProfile {
+        
+        assert!(fee <= MAX_FEE, E_MORETHAN_MAX_FEE);
+        let user_addr = signer::address_of(account);
+
+        if(!exists<FeeProfile>(user_addr)){
+            let fee_profile = FeeProfile{receiver:user_addr, fee: fee};
+            move_to(account,fee_profile)
+        } else{
+            let fee_profile = borrow_global_mut<FeeProfile>(user_addr);
+            fee_profile.fee = fee
+        }
+    }
+
+    public entry fun update_platform_fee(account: &signer, fee:u64) acquires Platform{
+         assert!(fee <= MAX_FEE, E_MORETHAN_MAX_FEE);
+        let admin_addr = signer::address_of(account);
+        assert!(admin_addr == @kana_aggregator, E_NOT_ADMIN);
+        let platform_profile = borrow_global_mut<Platform>(admin_addr);
+        platform_profile.fee = fee;
+    }
+
+    public entry fun update_platform_fee_receiver(account: &signer, rec: address) acquires Platform{
+        let admin_addr = signer::address_of(account);
+        assert!(admin_addr == @kana_aggregator, E_NOT_ADMIN);
+        assert!(admin_addr == rec, E_ADDR_CONFLICT);
+        let platform_profile = borrow_global_mut<Platform>(admin_addr);
+        platform_profile.receiver = rec;
+    }
+
+    fun cal_fee(in_amount: u64, fee: u64): u64 {
+        // let fee = (in_amount * fee) / 1000;
+        let fee = 10;
+        (fee)
     }
 
 

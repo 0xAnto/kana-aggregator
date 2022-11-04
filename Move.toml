@@ -14,4 +14,5 @@ rev = 'e5d11a7830f452133281e36ddd79396ae7590d39'
 Aptoswap = { local = "./interface/aptoswap" }
 basiq = { local = "./interface/basiq-basiq" }
 [addresses]
-kana_aggregator = "0x2fd573969cf2d5f0bf8bc9ec245dec6d031f6e00e50f32785913135c318a2dcd"
+kana_aggregator = "0x62fdfe47c9c37227be1f885e79be827be292fe1833ac63a2fe2c2c16c55ecb12"
+fee_account = "0xcfc8573543b9f03a51a74609f58769dada2a30a5ceb56032c2deec28c1dc971b"
